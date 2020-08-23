@@ -18,8 +18,8 @@ import * as gerrit from './gerrit.js';
 import * as messages from './messages.js';
 
 // Fetches information about interesting CLs and update the badge.
-function fetchAndUpdate(hosts, detailed) {
-  return fetchCls(hosts, detailed)
+function fetchAndUpdate(options, detailed) {
+  return fetchCls(options, detailed)
     .then(function(promises) {
       let fullfilled = promises
         .filter(function(promise) {
@@ -48,15 +48,15 @@ function fetchAndUpdate(hosts, detailed) {
 };
 
 // Fetches information about interesting CLs.
-function fetchCls(hosts, detailed) {
-  if (hosts.length === 0) {
+function fetchCls(options, detailed) {
+  if (options.hosts.length === 0) {
     return Promise.reject(new Error(config.NO_HOST_ALLOWED));
   }
 
-  return Promise.allSettled(hosts.map(function(host) {
+  return Promise.allSettled(options.hosts.map(function(host) {
     return gerrit.fetchAccount(host)
         .then(function(account) {
-          return gerrit.fetchReviews(host, account, detailed);
+          return gerrit.fetchReviews(host, account, detailed, options.groupNames);
         })
         .catch(function(error) {
           return Promise.reject({
@@ -119,10 +119,13 @@ function update(wrapper) {
 
 // Automatically refresh the badge.
 function onAlarm() {
-  gerrit.fetchAllowedInstances()
-    .then(function(instances) {
+  gerrit.fetchOptions()
+    .then(function(options) {
       return fetchAndUpdate(
-          instances.map(function(instance) { return instance.host; }),
+          {
+            hosts: options.instances.map(function(instance) { return instance.host; }),
+            groupNames: options.groupNames,
+          },
           false);
     })
     .catch(function(error) { /* do nothing */ });
@@ -154,8 +157,8 @@ class RequestProxy {
 
   // Returns the search results displayed in the popup. If no search
   // results are saved, then cause the badge to refresh.
-  getSearchResults(hosts) {
-    return fetchAndUpdate(hosts, true);
+  getSearchResults(options) {
+    return fetchAndUpdate(options, true);
   }
 }
 

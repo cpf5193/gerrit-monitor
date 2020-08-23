@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
 
-  "name": "Gerrit Monitor",
-  "description": "Monitor your CLs on Gerrit",
-  "version": "1.0.12",
+  "name": "Gerrit Monitor with Groups",
+  "description": "Monitor your CLs on Gerrit, now with groups!",
+  "version": "1.0.0",
 
   "icons": {
     "48": "img/icon48.png",

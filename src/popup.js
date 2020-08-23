@@ -235,7 +235,7 @@ function displayPopup() {
       }
 
       if (wrapper.errors.length !== 0) {
-        setLogginButtonVisible(
+        setLoginButtonVisible(
           wrapper.errors[0].error,
           wrapper.errors.map(function(error) {
             return error.host;
@@ -265,7 +265,7 @@ function setOverlayVisible(visible) {
 // overlay to be visible as well. If limit_to_those_hosts is defined,
 // then it can be used to restrict the button to only open a subset of
 // the hosts.
-function setLogginButtonVisible(overlay_text, limit_to_those_hosts) {
+function setLoginButtonVisible(overlay_text, limit_to_those_hosts) {
   setOverlayText(overlay_text);
   setElementVisibility('login', true);
 
@@ -300,24 +300,27 @@ function setElementVisibility(identifier, visible) {
 
 // Calls the badge page to get the search results.
 function getSearchResults() {
-  return gerrit.fetchAllowedInstances().then(function(instances) {
-    var hosts = instances.map(function(instance) { return instance.host; });
-    return comm.sendMessage('getSearchResults', hosts)
-      .then(function(wrapper) {
-        var results = undefined;
-        if (wrapper.results.length !== 0) {
-          results = new gerrit.SearchResults(wrapper.results.map(
-            function(result) {
-              return gerrit.SearchResult.wrap(
-                result.host, result.user, result.data);
-            }));
-        }
+  return gerrit.fetchOptions().then(function(options) {
+    var hosts = options.instances.map(function(instance) { return instance.host; });
+    return comm.sendMessage('getSearchResults', {
+      hosts,
+      groupNames: options.groupNames
+    })
+    .then(function(wrapper) {
+      var results = undefined;
+      if (wrapper.results.length !== 0) {
+        results = new gerrit.SearchResults(wrapper.results.map(
+          function(result) {
+            return gerrit.SearchResult.wrap(
+              result.host, result.user, result.data);
+          }));
+      }
 
-        return Promise.resolve({
-          results: results,
-          errors: wrapper.errors
-        });
+      return Promise.resolve({
+        results: results,
+        errors: wrapper.errors
       });
+    });
   });
 };
 
