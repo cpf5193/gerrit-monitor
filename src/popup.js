@@ -222,6 +222,7 @@ function displayPopup() {
     .then(function(wrapper) {
       var hideOverlay = false;
       if (wrapper.results !== undefined) {
+        console.log('From getSearchResults: results = ${wrapper.results}');
         var widget = PopupWidget.create(wrapper.results);
         if (widget.getSections().length === 0) {
           setOverlayText(messages.NO_CLS_MESSAGE + '.');

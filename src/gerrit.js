@@ -538,7 +538,8 @@ export function fetchAccount(host) {
 };
 
 // Returns a promise with all reviews requiring attention.
-export function fetchReviews(host, account, detailed) {
+export function fetchReviews(host, account, detailed, groups) {
+  console.log(`groups: ${groups}`);
   var params = [];
   var userid = account._account_id
   var groupsString;

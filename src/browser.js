@@ -158,7 +158,7 @@ export function loadOptions() {
   });
 };
 
-// Saves options to storage, returning a promise that will be resolved
+// Saves instance options to storage, returning a promise that will be resolved
 // when the options are saved.
 export function saveOptions(options) {
   options = utils.Map.wrap(options);
@@ -171,6 +171,7 @@ export function saveOptions(options) {
         options_with_defaults[key] = value;
       }
     });
+    console.log(`options: ${options_with_defaults}`);
     chrome.storage.sync.set(options_with_defaults, function() {
       resolve(options_with_defaults);
     });
@@ -185,6 +186,8 @@ export function getAllowedOrigins() {
     });
   });
 };
+
+
 
 // Requests permissions to allow access to those origins.
 export function setAllowedOrigins(origins) {

@@ -29,6 +29,11 @@ export class Options {
     return this.instances_;
   }
 
+  // Return the value for the groupName option.
+  groupNames() {
+    return this.groupNames_;
+  }
+
   // Sets the status text (with a timeout).
   setStatusText(text, opt_timeout) {
     browser.getElement('status').innerText = text;
