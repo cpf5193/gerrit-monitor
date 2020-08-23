@@ -27,6 +27,15 @@ div {
   margin-top: 10px;
 }
 
+.section label {
+  margin-bottom: 10px;
+}
+
+ul {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
 input:invalid {
   color: red;
 }

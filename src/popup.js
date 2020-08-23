@@ -222,6 +222,7 @@ function displayPopup() {
     .then(function(wrapper) {
       var hideOverlay = false;
       if (wrapper.results !== undefined) {
+        console.log('From getSearchResults: results = ${wrapper.results}');
         var widget = PopupWidget.create(wrapper.results);
         if (widget.getSections().length === 0) {
           setOverlayText(messages.NO_CLS_MESSAGE + '.');
@@ -300,9 +301,9 @@ function setElementVisibility(identifier, visible) {
 
 // Calls the badge page to get the search results.
 function getSearchResults() {
-  return gerrit.fetchAllowedInstances().then(function(instances) {
-    var hosts = instances.map(function(instance) { return instance.host; });
-    return comm.sendMessage('getSearchResults', hosts)
+  return gerrit.fetchOptions().then(function(options) {
+    var hosts = options.instances.map(function(instance) { return instance.host; });
+    return comm.sendMessage('getSearchResults', { hosts, groupNames: options.groupNames })
       .then(function(wrapper) {
         var results = undefined;
         if (wrapper.results.length !== 0) {

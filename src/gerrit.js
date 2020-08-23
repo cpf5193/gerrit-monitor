@@ -538,10 +538,18 @@ export function fetchAccount(host) {
 };
 
 // Returns a promise with all reviews requiring attention.
-export function fetchReviews(host, account, detailed) {
+export function fetchReviews(host, account, detailed, groups) {
+  console.log(`groups: ${groups}`);
   var params = [];
-  var userid = account._account_id;
+  var userid = account._account_id
+  var groupsString = '';
+  if (groups.length > 1) {
+    groupsString = `reviewer:(${groups.join(' OR ')}) `;
+  } else if (groups.length === 1) {
+    groupsString = `reviewer:${groups.join(' OR ')} `;
+  }
   params.push(['q', 'status:open owner:' + userid]);
+  params.push(['q', `status:open -star:ignore ${groupsString}-reviewer:${userid}`]);
   params.push(['q', 'status:open -star:ignore reviewer:' + userid + ' -owner:' + userid]);
   params.push(['o', 'CURRENT_REVISION']);
   params.push(['o', 'DETAILED_LABELS']);
@@ -561,13 +569,16 @@ export function fetchReviews(host, account, detailed) {
 };
 
 // Returns a promise with a list of all host that are configured
-// including those that have no permissions granted.
-export function fetchAllInstances() {
+// including those that have no permissions granted, and the group names.
+export function fetchOptions() {
   return Promise.all([
       browser.loadOptions(),
       browser.getAllowedOrigins(),
     ]).then(function(values) {
+      console.log(values);
+      var options = {};
       var instances = [];
+      var groupNames = [];
       var origins = values[1];
       values[0].instances.forEach(function(instance) {
         // Version of the extension prior to 0.7.7 allowed instance.host
@@ -584,8 +595,23 @@ export function fetchAllInstances() {
           });
         }
       });
-      return Promise.resolve(instances);
+      values[0].groupNames.forEach(function(groupName) {
+        var match = config.GROUP_NAME_REGEXP.exec(groupName);
+        if (match !== null) {
+          groupNames.push(groupName);
+        }
+      });
+
+      return Promise.resolve({ instances, groupNames });
     });
+};
+
+// Returns a promise with a list of all host that are configured
+// including those that have no permissions granted.
+export function fetchAllInstances() {
+  return fetchOptions().then((function(options) {
+    return options.instances;
+  }));
 };
 
 // Returns a promise with a list of all host that the extension has

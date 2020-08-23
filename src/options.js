@@ -21,11 +21,17 @@ import * as gerrit from './gerrit.js';
 export class Options {
   constructor() {
     this.instances_ = [];
+    this.groupNames_ = [];
   }
 
-  // Return the value for option.
+  // Return the value for the instance option.
   instances() {
     return this.instances_;
+  }
+
+  // Return the value for the groupName option.
+  groupNames() {
+    return this.groupNames_;
   }
 
   // Sets the status text (with a timeout).
@@ -33,7 +39,7 @@ export class Options {
     browser.getElement('status').innerText = text;
     setTimeout(
         function() { browser.getElement('status').innerText = ''; },
-        opt_timeout || 350);
+        opt_timeout || 750);
   }
 
   // Add a new Gerrit instance, or enable the instance if it already exists.
@@ -89,19 +95,51 @@ export class Options {
     });
   }
 
+  // Add a new group name.
+  addGroupName(groupName) {
+    this.groupNames_.forEach(function(name) {
+      if (name === groupName) {
+        this.setStatusText('Already have this group name');
+        return;
+      }
+    });
+
+    this.groupNames_.push(groupName);
+
+    dombuilder.DomBuilder.attach(browser.getElement('group-names'))
+      .begin('li')
+        .addClass('group-name')
+        .appendText(groupName)
+      .end('li');
+  }
+
+  // Apply the restored Gerrit instance options.
+  applyInstanceOptions(instances) {
+    instances.forEach((function(instance) {
+      this.addGerritInstance(instance.host, instance.name, instance.enabled);
+    }).bind(this));
+  }
+
+  // Apply the restored Gerrit group name options.
+  applyGroupNameOptions(groupNames) {
+    groupNames.forEach(function(groupName) {
+      this.addGroupName(groupName);
+    }.bind(this));
+  }
+
   // Restore the options from Chrome storage and update the option page.
   loadOptions() {
-    return gerrit.fetchAllInstances().then((function(instances) {
-      instances.forEach((function(instance) {
-        this.addGerritInstance(instance.host, instance.name, instance.enabled);
-      }).bind(this));
+    return gerrit.fetchOptions().then((function(options) {
+      this.applyInstanceOptions(options.instances);
+      this.applyGroupNameOptions(options.groupNames);
     }).bind(this));
   }
 
   // Save the options to Chrome storage and update permissions.
-  saveOptions() {
+  saveInstanceOptions() {
     var origins = [];
-    var options = { instances: this.instances_ };
+    console.log(`groupNames: ${this.groupNames_}`);
+    var options = { instances: this.instances_, groupNames: this.groupNames_ };
     this.instances_.forEach(function(instance) {
       if (instance.enabled) {
         var match = config.ORIGIN_REGEXP.exec(instance.host);
@@ -122,10 +160,50 @@ export class Options {
       }).bind(this));
   }
 
-  // Main method.
-  onLoaded() {
-    this.loadOptions();
+  // Save the options to Chrome storage and update permissions.
+  saveGroupNameOptions() {
+    console.log('calling saveGroupNameOptions');
+    var groups = [];
+    var invalidGroups = [];
+    var options = { instances: this.instances_, groupNames: this.groupNames_ };
+    this.groupNames_.forEach(function(groupName) {
+      if (config.GROUP_NAME_REGEXP.exec(groupName) !== null) {
+        groups.push(groupName);
+      } else {
+        invalidGroups.push(groupName);
+      }
+    });
+    if (invalidGroups.length > 0) {
+      this.setStatusText(`Invalid group names: ${invalidGroups.join(', ')}`);
+    } else if (groups.length === 0) {
+      this.setStatusText(`Nothing to save`);
+    } else {
+      console.log(`saveOptions: ${options}`);
+      browser.saveOptions(options)
+        .then((function () {
+          this.setStatusText('Options saved.');
+        }).bind(this))
+        .catch((function (error) {
+          this.setStatusText(String(error));
+        }).bind(this));
+    }
+  }
 
+  handleInstanceAdd() {
+    browser.getElement('add-group-name').pattern = config.GROUP_NAME_PATTERN;
+    browser.getElement('add-group-button').addEventListener('click', (function () {
+      var name = browser.getElement('add-group-name').value;
+      var match = config.GROUP_NAME_REGEXP.exec(name);
+      if (match !== null) {
+        this.addGroupName(name);
+        browser.getElement('add-group-name').value = '';
+      } else {
+        this.setStatusText('Incorrect group name values.');
+      }
+    }).bind(this));
+  }
+
+  handleGroupNameAdd() {
     browser.getElement('add-button-name').pattern = '.+';
     browser.getElement('add-button-host').pattern = config.ORIGIN_PATTERN;
     browser.getElement('add-button').addEventListener('click', (function () {
@@ -139,12 +217,27 @@ export class Options {
         browser.getElement('add-button-host').value = '';
         browser.getElement('add-button-name').value = '';
       } else {
-        this.setStatusText('Incorrect values.');
+        this.setStatusText('Incorrect instance values.');
       }
     }).bind(this));
+  }
 
-    browser.getElement('save-button').addEventListener('click', (function () {
-      this.saveOptions();
+  // Main method.
+  onLoaded() {
+    console.log('loading options');
+    this.loadOptions();
+
+    this.handleInstanceAdd();
+    this.handleGroupNameAdd();
+
+    browser.getElement('save-instance-button').addEventListener('click', (function () {
+      console.log('save instance');
+      this.saveInstanceOptions();
+    }).bind(this));
+
+    browser.getElement('save-group-name-button').addEventListener('click', (function () {
+      console.log('save group name');
+      this.saveGroupNameOptions();
     }).bind(this));
   }
 }

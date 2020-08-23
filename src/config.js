@@ -17,6 +17,12 @@
 export const ORIGIN_PATTERN = "(https?://[^/]*)(/[^/]+)*";
 export const ORIGIN_REGEXP = new RegExp('^' + ORIGIN_PATTERN);
 
+// Pattern matching a valid group name.
+// Word character class not working for some reason.
+const WORD_CHS = '[a-zA-Z0-9_-]+'
+export const GROUP_NAME_PATTERN = `${WORD_CHS}@*${WORD_CHS}\.*${WORD_CHS}`;
+export const GROUP_NAME_REGEXP = new RegExp(`^${GROUP_NAME_PATTERN}$`, 'i');
+
 // Login prompt.
 export const LOGIN_PROMPT = ' Try logging in.';
 
@@ -39,4 +45,6 @@ export const DEFAULT_OPTIONS = {
     host: 'https://fuchsia-review.googlesource.com',
     enabled: false,
   }],
+
+  groupNames: [],
 };
